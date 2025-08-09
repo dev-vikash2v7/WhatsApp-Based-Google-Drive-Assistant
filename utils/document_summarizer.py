@@ -2,7 +2,7 @@ import os
 import json
 import logging
 from typing import List, Dict, Optional
-from python.google_drive_client import GoogleDriveClient
+from utils.google_drive_client import GoogleDriveClient
 import google.generativeai as genai
 
 logging.basicConfig(level=logging.INFO)

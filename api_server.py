@@ -4,9 +4,9 @@ import logging
 from flask import Flask, request, jsonify
 from twilio.twiml.messaging_response import MessagingResponse
 
-from python.command_parser import CommandParser
-from python.google_drive_client import GoogleDriveClient
-from python.document_summarizer import DocumentSummarizer
+from utils.command_parser import CommandParser
+from utils.google_drive_client import GoogleDriveClient
+from utils.document_summarizer import DocumentSummarizer
 
 
 from dotenv import load_dotenv
