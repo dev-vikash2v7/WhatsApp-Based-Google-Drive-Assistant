@@ -11,7 +11,7 @@ TWILIO_AUTH_TOKEN=your_twilio_auth_token_here
 TWILIO_WHATSAPP_NUMBER=whatsapp:+14155238886
 
 # API Server Configuration
-API_SERVER_URL=http://localhost:5000
+API_SERVER_URL=https://0dfaf8929b0e.ngrok-free.app
 FLASK_ENV=production
 PORT=5000
 

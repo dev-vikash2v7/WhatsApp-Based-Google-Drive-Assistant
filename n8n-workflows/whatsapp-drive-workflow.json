@@ -1,0 +1,445 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "whatsapp-incoming",
+        "options": {}
+      },
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -64,
+        -16
+      ],
+      "id": "018ec4a4-53f7-451e-97e1-5f75a1141df1",
+      "webhookId": "a6e265af-5181-45e9-9fd2-63c11c638537"
+    },
+    {
+      "parameters": {
+        "functionCode": "const text = $json.body.Body ;\nconst parts = text.trim().split(/\\s+/);\n\nconsole.log({text , parts})\n\nreturn [{\n  json: {\n    command: parts[0].toUpperCase(),\n    params: parts.slice(1),\n    From : $json.body.From,\n    To : $json.body.To\n  }\n}];"
+      },
+      "name": "Parse Command",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        240,
+        -16
+      ],
+      "id": "b159ac62-9a83-49fd-b38e-791879c03ad1",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json[\"command\"]}}",
+              "value2": "LIST"
+            }
+          ]
+        }
+      },
+      "name": "If LIST",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        576,
+        -160
+      ],
+      "id": "af1c9cd8-ed3e-4a13-aff3-741da76fe827"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "list",
+        "options": {
+          "fields": []
+        }
+      },
+      "name": "Google Drive List",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 1,
+      "position": [
+        784,
+        -176
+      ],
+      "id": "7e92eb63-7fa1-48ed-8f10-9d19b6436363",
+      "alwaysOutputData": false,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "CWXoeJBTgsb7j64b",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "from": "whatsapp:+YOUR_NUMBER",
+        "to": "={{$json.To}",
+        "message": "={{JSON.stringify($json.files || $json)}}",
+        "options": {}
+      },
+      "name": "Send WhatsApp LIST Result",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [
+        1040,
+        -160
+      ],
+      "id": "e3cca642-7d4c-4961-a5ad-b83056fb91bf",
+      "credentials": {
+        "twilioApi": {
+          "id": "XA8N9ZM5ij2QZFdV",
+          "name": "Twilio account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json[\"command\"]}}",
+              "value2": "DELETE"
+            }
+          ]
+        }
+      },
+      "name": "If DELETE",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        576,
+        -16
+      ],
+      "id": "0d98e218-a108-42c2-a214-e1a88fe1641a"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "delete",
+        "fileId": "={{$json.params[0]}}"
+      },
+      "name": "Google Drive Delete",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 1,
+      "position": [
+        800,
+        -32
+      ],
+      "id": "3d857c06-8434-4949-bcde-c7983e7c4027",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "CWXoeJBTgsb7j64b",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "from": "whatsapp:+YOUR_NUMBER",
+        "to": "={{$json.From}}",
+        "message": "File deleted successfully.",
+        "options": {}
+      },
+      "name": "Send WhatsApp DELETE Result",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [
+        1040,
+        -16
+      ],
+      "id": "d32087dd-6828-4a85-b215-68825616e7c1",
+      "credentials": {
+        "twilioApi": {
+          "id": "XA8N9ZM5ij2QZFdV",
+          "name": "Twilio account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json[\"command\"]}}",
+              "value2": "SUMMARISE"
+            }
+          ]
+        }
+      },
+      "name": "If SUMMARISE",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        576,
+        144
+      ],
+      "id": "9e78f62e-bb19-45e1-a80c-d9059ab0ac7a"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "list",
+        "options": {}
+      },
+      "name": "Google Drive List for Summarise",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 1,
+      "position": [
+        784,
+        144
+      ],
+      "id": "17362618-e313-4f73-890d-f292d6116727",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "CWXoeJBTgsb7j64b",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "download",
+        "fileId": "={{$json.id}}",
+        "options": {}
+      },
+      "name": "Google Drive Download File",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 1,
+      "position": [
+        976,
+        144
+      ],
+      "id": "6c7d48bf-1f15-4ef8-bdb0-a454980a7128",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "CWXoeJBTgsb7j64b",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "from": "whatsapp:+YOUR_NUMBER",
+        "to": "={{$json.From}}",
+        "message": "={{$json.data}}",
+        "options": {}
+      },
+      "name": "Send WhatsApp Summary",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [
+        1616,
+        208
+      ],
+      "id": "52e45164-9daf-41af-ab7e-55de10289dce",
+      "credentials": {
+        "twilioApi": {
+          "id": "XA8N9ZM5ij2QZFdV",
+          "name": "Twilio account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-1.5-pro-latest",
+          "mode": "list",
+          "cachedResultName": "models/gemini-1.5-pro-latest"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Summarise the following text in under 200 words:\n\n{{$binary.data.toString()}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        1184,
+        144
+      ],
+      "id": "3556bd57-1ca7-4512-84c6-287f1402de9a",
+      "name": "Message a model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "NdbzGXqPhgOPOqZ3",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "from": "whatsapp:8817956935",
+        "to": "=+14155238886",
+        "toWhatsapp": true,
+        "message": "=Default msg",
+        "options": {
+          "statusCallback": ""
+        }
+      },
+      "name": "Send WhatsApp Summary1",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [
+        400,
+        224
+      ],
+      "id": "04ae39f2-677e-4cc5-9b47-37c36128dd28",
+      "credentials": {
+        "twilioApi": {
+          "id": "XA8N9ZM5ij2QZFdV",
+          "name": "Twilio account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Parse Command",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Command": {
+      "main": [
+        [
+          {
+            "node": "If LIST",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "If DELETE",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "If SUMMARISE",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send WhatsApp Summary1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If LIST": {
+      "main": [
+        [
+          {
+            "node": "Google Drive List",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive List": {
+      "main": [
+        [
+          {
+            "node": "Send WhatsApp LIST Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If DELETE": {
+      "main": [
+        [
+          {
+            "node": "Google Drive Delete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive Delete": {
+      "main": [
+        [
+          {
+            "node": "Send WhatsApp DELETE Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If SUMMARISE": {
+      "main": [
+        [
+          {
+            "node": "Google Drive List for Summarise",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive List for Summarise": {
+      "main": [
+        [
+          {
+            "node": "Google Drive Download File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive Download File": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Send WhatsApp Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "3c2248d0-b37e-4fee-9cb7-f4395663bfc3",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "e21f1c25ae64b747207c5dc2948af3efe3be89513486d8429329e06f953795f1"
+  },
+  "id": "7FMN583H9w6CDNAF",
+  "tags": []
+}

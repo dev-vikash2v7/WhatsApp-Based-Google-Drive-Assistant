@@ -109,16 +109,12 @@ def main():
     print("🚀 Setting up WhatsApp Drive Assistant...")
     print("=" * 50)
     
-    # Check Python version
     check_python_version()
     
-    # Install dependencies
     install_dependencies()
     
-    # Create directories
     create_directories()
     
-    # Setup environment
     setup_environment()
     
     # Validate configuration

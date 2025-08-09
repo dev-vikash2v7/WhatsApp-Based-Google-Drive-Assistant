@@ -22,7 +22,6 @@ logger = logging.getLogger(__name__)
 class GoogleDriveClient:
     """Google Drive API client for file operations"""
     
-    # If modifying these scopes, delete the file token.json.
     SCOPES = [
         'https://www.googleapis.com/auth/drive.file',
         'https://www.googleapis.com/auth/drive.appdata',
@@ -39,7 +38,7 @@ class GoogleDriveClient:
     def _authenticate(self):
         """Authenticate with Google Drive API"""
         creds = None
-        # The file token.json stores the user's access and refresh tokens
+
         if os.path.exists('token.json'):
             creds = Credentials.from_authorized_user_file('token.json', self.SCOPES)
         
@@ -62,6 +61,9 @@ class GoogleDriveClient:
         self.service = build('drive', 'v3', credentials=creds)
         logger.info("Google Drive authentication successful")
     
+
+
+
     def list_files(self, folder_path: str = None) -> List[Dict]:
         """List files in a specific folder or root"""
         try:
@@ -81,6 +83,8 @@ class GoogleDriveClient:
                 fields="nextPageToken, files(id, name, mimeType, size, modifiedTime)"
             ).execute()
 
+            # print("results ------------ " , results)
+
             
             files = results.get('files', [])
 
@@ -93,13 +97,13 @@ class GoogleDriveClient:
                     "name": file['name'],
                     "id": file['id'],
                     "type": file['mimeType'],
-                    "size": self._format_size( int(file.get('size'))),
+                    "size": self._format_size( int(file.get('size', '0'))),
                     "modified": datetime.strptime(file['modifiedTime'], '%Y-%m-%dT%H:%M:%S.%fZ').strftime('%Y-%m-%d %H:%M:%S')
                 }
 
                 file_list.append(file_info)
             
-            print("file_list" , file_list)
+            # print("file_list ----------- " , file_list)
             
             return {"files": file_list}
             
@@ -107,6 +111,9 @@ class GoogleDriveClient:
             logger.error(f"Error listing files: {error}")
             return {"error": f"Failed to list files: {str(error)}"}
     
+
+
+
     def delete_file(self, file_path: str) -> Dict:
         """Delete a file by path"""
         try:
@@ -116,21 +123,24 @@ class GoogleDriveClient:
                 return {"error": f"File '{file_path}' not found"}
             
             self.service.files().delete(fileId=file_id).execute()
+
+            print("file_id deleted" , file_id)
+
             return {"message": f"File '{file_path}' deleted successfully"}
             
         except HttpError as error:
             logger.error(f"Error deleting file: {error}")
             return {"error": f"Failed to delete file: {str(error)}"}
+
+
     
     def move_file(self, source_path: str, destination_path: str) -> Dict:
-        """Move a file from source to destination folder"""
         try:
             file_id = self._get_file_id(source_path)
             if not file_id:
                 return {"error": f"Source file '{source_path}' not found"}
             
-            print("source_path" , source_path)
-            print("destination_path" , destination_path)
+    
             destination_folder_id = self._get_folder_id(destination_path)
             if not destination_folder_id:
                 return {"error": f"Destination folder '{destination_path}' not found"}
@@ -153,6 +163,33 @@ class GoogleDriveClient:
             logger.error(f"Error moving file: {error}")
             return {"error": f"Failed to move file: {str(error)}"}
     
+
+
+
+    def copy_file(self, source_path: str, destination_path: str) -> Dict:
+        try:
+            file_id = self._get_file_id(source_path)
+            if not file_id:
+                return {"error": f"Source file '{source_path}' not found"}
+            
+            destination_folder_id = self._get_folder_id(destination_path)
+            if not destination_folder_id:
+                return {"error": f"Destination folder '{destination_path}' not found"}
+            
+            file = self.service.files().copy(
+                fileId=file_id,
+                addParents=destination_folder_id,
+                fields='id, parents'
+            ).execute()
+
+            return {"message": f"File copied from '{source_path}' to '{destination_path}' successfully"}
+
+        except HttpError as error:
+            logger.error(f"Error copying file: {error}")
+            return {"error": f"Failed to copy file: {str(error)}"}
+
+
+
     def get_document_content(self, file_path: str) -> Dict:
         """Extract text content from various document types"""
         try:
@@ -290,9 +327,13 @@ class GoogleDriveClient:
     def _get_file_id(self, file_path: str) -> Optional[str]:
         """Get file ID by path"""
         try:
-            print("file_path id " , file_path)
+            print("_get_file_id file_path " , file_path)
             # Split path into components
+
+
             path_parts = file_path.strip('/').split('/')
+            print(path_parts)
+
             if len(path_parts) < 2:
                 return None
             
@@ -301,6 +342,9 @@ class GoogleDriveClient:
             
             # Get folder ID
             folder_id = self._get_folder_id(f"/{folder_name}")
+
+            print(folder_id)
+
             if not folder_id:
                 return None
             
@@ -309,9 +353,13 @@ class GoogleDriveClient:
                 q=f"'{folder_id}' in parents and name='{file_name}' and trashed=false",
                 fields="files(id, name)"
             ).execute()
+
+            print('results' , results)
             
             files = results.get('files', [])
-            print("files" , files)
+            print("getfileid files" , files)
+
+
             if files:
                 return files[0]['id']
 

@@ -8,7 +8,6 @@ from google_drive_client import GoogleDriveClient
 from document_summarizer import DocumentSummarizer
 from dotenv import load_dotenv
 
-# Load environment variables
 load_dotenv()
 
 # Configure logging
@@ -17,11 +16,8 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
-# Initialize components
 command_parser = CommandParser()
-
 drive_client = GoogleDriveClient()
-
 summarizer = DocumentSummarizer()
 
 
@@ -48,7 +44,7 @@ def webhook():
         
         # Parse the command
         parsed_command = command_parser.parse_message(message_body)
-        # print("parsed_command" , parsed_command)
+        print("parsed_command" , parsed_command)
         
         if not parsed_command.get("success", False):
             response_text = command_parser.format_response(parsed_command)
@@ -67,10 +63,16 @@ def webhook():
         error_response = f"❌ Error processing your request: {str(e)}"
         return _create_twilio_response(error_response)
 
+
+
+
+
+
 @app.route('/api/execute', methods=['POST'])
 def api_execute():
     """API endpoint for direct command execution (for n8n integration)"""
     try:
+        print("api_execute" , request.get_json())
         data = request.get_json()
         
         if not data:
@@ -87,7 +89,8 @@ def api_execute():
             return jsonify({
                 "success": False,
                 "error": parsed_command.get("error", "Unknown error"),
-                "response": command_parser.format_response(parsed_command)
+                "response": command_parser.format_response(parsed_command),
+
             })
         
         # Execute the command
@@ -97,35 +100,55 @@ def api_execute():
         return jsonify({
             "success": True,
             "command": command,
-            "response": response_text
+            "response": response_text, 
         })
         
     except Exception as e:
         logger.error(f"Error in API execute: {e}")
         return jsonify({
             "success": False,
-            "error": str(e)
+            "error": str(e),
         }), 500
+
+
 
 def _execute_command(command: str, parsed_command: dict) -> str:
     """Execute the parsed command and return response"""
     try:
         if command == "LIST":
             folder_path = parsed_command.get("folder_path")
+            print("folder_path" , folder_path)
+
             result = drive_client.list_files(folder_path)
-            # print("list result" , result)
+
+            print("list result" , result)
             return _format_list_response(result)
         
         elif command == "DELETE":
             file_path = parsed_command.get("file_path")
             result = drive_client.delete_file(file_path)
+            print("delete result" , result)
             return _format_delete_response(result)
         
         elif command == "MOVE":
             source_path = parsed_command.get("source_path")
             destination_path = parsed_command.get("destination_path")
+
+            print("source_path" , source_path)
+            print("destination_path" , destination_path)
+
             result = drive_client.move_file(source_path, destination_path)
+            print("move result" , result)
             return _format_move_response(result)
+        
+        elif command == "COPY":
+            source_path = parsed_command.get("source_path")
+            destination_path = parsed_command.get("destination_path")
+
+
+            result = drive_client.copy_file(source_path, destination_path)
+            print("copy result" , result)
+            return _format_copy_response(result)
         
         elif command == "SUMMARY":
             folder_path = parsed_command.get("folder_path")
@@ -169,7 +192,6 @@ def _format_list_response(result: dict) -> str:
     return response
 
 def _format_delete_response(result: dict) -> str:
-    """Format delete file response for WhatsApp"""
     if "error" in result:
         return f"❌ {result['error']}"
     
@@ -178,8 +200,10 @@ def _format_delete_response(result: dict) -> str:
     
     return "✅ File deleted successfully"
 
+
+
+
 def _format_move_response(result: dict) -> str:
-    """Format move file response for WhatsApp"""
     if "error" in result:
         return f"❌ {result['error']}"
     
@@ -188,11 +212,29 @@ def _format_move_response(result: dict) -> str:
     
     return "✅ File moved successfully"
 
+
+
+def _format_copy_response(result: dict) -> str:
+    if "error" in result:
+        return f"❌ {result['error']}"
+    
+    if "message" in result:
+        return f"✅ {result['message']}"
+    
+    return "✅ File copied successfully"
+
+
+
+
+
+
 def _create_twilio_response(message: str) -> str:
     """Create Twilio TwiML response"""
     resp = MessagingResponse()
     resp.message(message)
     return str(resp)
+
+
 
 @app.route('/health', methods=['GET'])
 def health_check():
@@ -217,7 +259,9 @@ def test_endpoint():
 @app.route('/', methods=['GET'])
 def get_root():
     print("get_root")
-    return jsonify({"message": "WhatsApp Drive Assistant API is running"})
+    return jsonify({
+        "message": "WhatsApp Drive Assistant API is running",
+        })
 
 
 if __name__ == '__main__':

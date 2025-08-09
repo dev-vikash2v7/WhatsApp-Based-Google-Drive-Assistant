@@ -2,11 +2,9 @@ import os
 import json
 import logging
 from typing import List, Dict, Optional
-# from openai import OpenAI
 from google_drive_client import GoogleDriveClient
 import google.generativeai as genai
 
-# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -22,7 +20,6 @@ class DocumentSummarizer:
         
         genai.configure(api_key=os.getenv('GEMINI_API_KEY'))
 
-        # Clear any proxy environment variables that might interfere
         proxy_vars = ['HTTP_PROXY', 'HTTPS_PROXY', 'http_proxy', 'https_proxy']
         original_proxy_values = {}
         
@@ -161,7 +158,7 @@ class DocumentSummarizer:
         """Generate AI summary using OpenAI GPT-4"""
         try:
             prompt = f"""
-            Please provide a concise summary of the following document: "{filename}"
+            Please provide summary in 2-3 sentences in bullet pointes of the following document: "{filename}"
             
             Document content:
             {content}
@@ -173,8 +170,7 @@ class DocumentSummarizer:
             print('summary' , summary)
 
            
-            
-          
+        
             return {"summary": summary}
             
         except Exception as e:

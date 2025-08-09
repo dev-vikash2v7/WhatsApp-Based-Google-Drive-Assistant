@@ -72,14 +72,17 @@ class CommandParser:
     
     def _parse_list_command(self, parts: list) -> Dict:
         """Parse LIST command"""
-        print("parts" , parts)
+        # print("parts" , parts)
+
         if len(parts) < 2:
             return self._create_error_response("LIST command requires a folder path")
         
         folder_path = parts[1]
-        if not self._is_valid_path(folder_path):
-            return self._create_error_response("Invalid folder path format")
+
+        # if not self._is_valid_path(folder_path):
+        #     return self._create_error_response("Invalid folder path format")
         
+        # print("folder_path" , folder_path)
         return {
             "command": "LIST",
             "folder_path": folder_path,
@@ -102,7 +105,6 @@ class CommandParser:
         }
     
     def _parse_move_command(self, parts: list) -> Dict:
-        """Parse MOVE command"""
         if len(parts) < 3:
             return self._create_error_response("MOVE command requires source and destination paths")
         
@@ -117,6 +119,26 @@ class CommandParser:
         
         return {
             "command": "MOVE",
+            "source_path": source_path,
+            "destination_path": destination_path,
+            "success": True
+        }
+
+    def _parse_copy_command(self, parts: list) -> Dict:
+        if len(parts) < 3:
+            return self._create_error_response("COPY command requires source and destination paths")
+        
+        source_path = parts[1]
+        destination_path = parts[2]
+        
+        if not self._is_valid_path(source_path):
+            return self._create_error_response("Invalid source path format")
+        
+        if not self._is_valid_path(destination_path):
+            return self._create_error_response("Invalid destination path format")
+        
+        return {
+            "command": "COPY",
             "source_path": source_path,
             "destination_path": destination_path,
             "success": True
@@ -152,9 +174,7 @@ class CommandParser:
             if char in path:
                 return False
         
-        # Path should not be too long
-        if len(path) > 255:
-            return False
+      
         
         return True
     
