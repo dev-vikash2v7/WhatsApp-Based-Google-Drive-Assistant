@@ -23,6 +23,7 @@ COPY setup.py .
 COPY .env .
 COPY credentials.json .
 COPY README.md .
+COPY n8n-workflows/ ./n8n-workflows/
 
 # Create necessary directories
 RUN mkdir -p logs data credentials
