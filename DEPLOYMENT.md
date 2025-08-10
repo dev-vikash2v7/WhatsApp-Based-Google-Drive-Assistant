@@ -1,15 +1,14 @@
 # WhatsApp Drive Assistant - Deployment Guide
 
-This guide will walk you through setting up the WhatsApp Drive Assistant with n8n workflow integration.
 
 ## Prerequisites
 
 - Python 3.8 or higher
 - Docker and Docker Compose (optional)
-- n8n instance
-- Twilio account
-- Google Cloud Platform account
-- OpenAI API key
+- n8n instance (Workflow)
+- Twilio account (For Whatsapp )
+- Google Cloud Platform account (Google Drive)
+- Gemini API key (Summarization)
 
 ## Step 1: Google Drive API Setup
 
@@ -47,7 +46,7 @@ If you prefer OAuth2 authentication:
 ## Step 3: OpenAI API Setup
 
 ### 3.1 Get API Key
-1. Go to [OpenAI Platform](https://platform.openai.com/)
+1. Go to [Gemini Platform](https://ai.google.dev/)
 2. Create account and get API key
 3. Note your API key for configuration
 
@@ -66,7 +65,7 @@ Edit `.env` file with your credentials:
 GOOGLE_DRIVE_CREDENTIALS_FILE=credentials.json
 
 # OpenAI API Configuration
-OPENAI_API_KEY=your_openai_api_key_here
+GEMINI_API_KEY=your_gemini_api_key_here
 
 # Twilio Configuration
 TWILIO_ACCOUNT_SID=your_twilio_account_sid_here
@@ -78,8 +77,6 @@ API_SERVER_URL=https://your-domain.com
 FLASK_ENV=production
 PORT=5000
 
-# n8n Configuration
-N8N_WEBHOOK_URL=https://your-n8n-instance.com/webhook/whatsapp-drive-assistant
 ```
 
 ## Step 5: Installation
@@ -98,7 +95,7 @@ pip install -r requirements.txt
 
 #### 5.3 Start API Server
 ```bash
-python python/api_server.py
+python api_server.py
 ```
 
 ### Option B: Docker Deployment
@@ -247,13 +244,13 @@ docker-compose --profile production up -d
 Enable debug logging:
 ```bash
 export LOG_LEVEL=DEBUG
-python python/api_server.py
+python api_server.py
 ```
 
 ### Health Check
 Test the API server:
 ```bash
-curl http://localhost:5000/health
+curl http://localhost:5000/
 ```
 
 ## Security Considerations

@@ -13,7 +13,7 @@ class DocumentSummarizer:
     """AI-powered document summarizer using GEMINI_API_KEY"""
     
     def __init__(self, api_key: str = None):
-        """Initialize the summarizer with GEMINI_API_KEY """
+        
         self.api_key = api_key or os.getenv('GEMINI_API_KEY')
         if not self.api_key:
             raise ValueError("GEMINI_API key not found")
@@ -29,9 +29,7 @@ class DocumentSummarizer:
                 del os.environ[var]
         
         try:
-
-            self.client = genai.GenerativeModel("gemini-1.5-flash")
-           
+            self.client = genai.GenerativeModel("gemini-2.0-flash")
 
         except Exception as e:
             logger.error(f"Error initializing OpenAI client: {e}")
@@ -116,13 +114,14 @@ class DocumentSummarizer:
             logger.error(f"Error summarizing document: {e}")
             return {"error": f"Failed to summarize document: {str(e)}"}
     
+
+    
     def _summarize_single_document(self, file_path: str, file_name: str) -> Dict:
-        """Generate summary for a single document"""
+        print("""Generate summary for a single document""")
         try:
             # Get document content
             content_result = self.drive_client.get_document_content(file_path)
 
-            print('content result' , content_result)
             
             if "error" in content_result:
                 return content_result
@@ -154,11 +153,14 @@ class DocumentSummarizer:
             logger.error(f"Error in _summarize_single_document: {e}")
             return {"error": f"Failed to summarize document: {str(e)}"}
     
+
+
+
     def _generate_ai_summary(self, content: str, filename: str) -> Dict:
-        """Generate AI summary using OpenAI GPT-4"""
+        """Generate AI summary using Google Gemini"""
         try:
             prompt = f"""
-            Please provide summary in 2-3 sentences in bullet pointes of the following document: "{filename}"
+            Provide only 1-2 sentence linke short  summary with bullet pointes of the following document: "{filename}"
             
             Document content:
             {content}
@@ -167,15 +169,15 @@ class DocumentSummarizer:
 
             response = self.client.generate_content(prompt)
             summary = response.text.strip()
-            print('summary' , summary)
 
-           
         
             return {"summary": summary}
             
         except Exception as e:
             logger.error(f"Error generating AI summary: {e}")
             return {"error": f"Failed to generate AI summary: {str(e)}"}
+
+
     
     def _create_folder_summary(self, summaries: List[Dict], folder_path: str) -> str:
         """Create a comprehensive summary of all documents in the folder"""
@@ -193,31 +195,23 @@ class DocumentSummarizer:
             
             # Generate a high-level folder summary
             prompt = f"""
-            Please provide a brief overview of this folder based on the following document summaries:
+            Please provide single line very short description of this folder based on the following document summaries:
             
             {combined_content}
             
-            Create a 2-3 sentence summary that captures the main themes or purpose of this folder.
             """
             
-            response = self.client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[
-                    {"role": "system", "content": "You are a helpful assistant that creates brief, insightful overviews of document collections."},
-                    {"role": "user", "content": prompt}
-                ],
-                max_tokens=150,
-                temperature=0.3
-            )
-            
-            return response.choices[0].message.content.strip()
+            response = self.client.generate_content(prompt)
+
+            return response.text.strip()
             
         except Exception as e:
             logger.error(f"Error creating folder summary: {e}")
             return f"Folder contains {len(summaries)} documents. Individual summaries available above."
+
+            
     
     def format_summary_response(self, summary_result: Dict) -> str:
-        """Format the summary result into a WhatsApp-friendly response"""
         try:
             if "error" in summary_result:
                 return f"❌ Error: {summary_result['error']}"
@@ -229,12 +223,11 @@ class DocumentSummarizer:
             if "filename" in summary_result and "summary" in summary_result:
                 response = f"📄 *{summary_result['filename']}*\n\n"
                 response += f"{summary_result['summary']}\n\n"
-                response += f"📊 Word count: {summary_result.get('word_count', 'N/A')}"
                 return response
             
             # Folder summary
             if "folder_summary" in summary_result:
-                response = f"📁 *{summary_result['folder_path']}*\n\n"
+                response = f"📁 *{summary_result['folder_path']} Folder*\n\n"
                 response += f"📊 Total documents: {summary_result['total_documents']}\n\n"
                 response += f"📋 *Folder Overview:*\n{summary_result['folder_summary']}\n\n"
                 

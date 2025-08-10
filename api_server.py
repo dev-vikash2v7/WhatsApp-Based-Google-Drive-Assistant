@@ -27,53 +27,10 @@ summarizer = DocumentSummarizer()
 
 
 
-@app.route('/webhook', methods=['POST'])
-def webhook():
-    """Handle incoming webhook from n8n/Twilio"""
-    try:
-        
-        if request.is_json:
-            data = request.get_json()
-        else:
-            data = request.form.to_dict()
-        
-        message_body = data.get('Body', '')
-        from_number = data.get('From', '')
-        
-        logger.info(f"Received message from {from_number}: {message_body}")
-        
-        if not message_body:
-            return jsonify({"error": "No message body received"})
-        
-        # Parse the command
-        parsed_command = command_parser.parse_message(message_body)
-        print("parsed_command" , parsed_command)
-        
-        if not parsed_command.get("success", False):
-            response_text = command_parser.format_response(parsed_command)
-            print("response_text if not parsed cmd" , response_text)
-            return _create_twilio_response(response_text)
-        
-        # Execute the command
-        command = parsed_command.get("command")
-        # print("command" , command)
-        response_text = _execute_command(command, parsed_command)
-        # print("response_text - " , response_text)
-        return _create_twilio_response(response_text)
-        
-    except Exception as e:
-        logger.error(f"Error processing webhook: {e}")
-        error_response = f"❌ Error processing your request: {str(e)}"
-        return _create_twilio_response(error_response)
-
-
-
-
 
 
 @app.route('/api/execute', methods=['POST'])
 def api_execute():
-    """API endpoint for direct command execution (for n8n integration)"""
     try:
         print("api_execute" , request.get_json())
         data = request.get_json()
@@ -96,9 +53,11 @@ def api_execute():
 
             })
         
-        # Execute the command
         command = parsed_command.get("command")
+
         response_text = _execute_command(command, parsed_command)
+        print("response_text" , response_text)
+
         
         return jsonify({
             "success": True,
@@ -116,21 +75,19 @@ def api_execute():
 
 
 def _execute_command(command: str, parsed_command: dict) -> str:
-    """Execute the parsed command and return response"""
     try:
         if command == "LIST":
             folder_path = parsed_command.get("folder_path")
-            print("folder_path" , folder_path)
 
             result = drive_client.list_files(folder_path)
 
-            print("list result" , result)
+            # print("list result" , result)
             return _format_list_response(result)
         
         elif command == "DELETE":
             file_path = parsed_command.get("file_path")
             result = drive_client.delete_file(file_path)
-            print("delete result" , result)
+            # print("delete result" , result)
             return _format_delete_response(result)
         
         elif command == "MOVE":
@@ -141,28 +98,56 @@ def _execute_command(command: str, parsed_command: dict) -> str:
             print("destination_path" , destination_path)
 
             result = drive_client.move_file(source_path, destination_path)
-            print("move result" , result)
+            # print("move result" , result)
             return _format_move_response(result)
         
         elif command == "COPY":
             source_path = parsed_command.get("source_path")
             destination_path = parsed_command.get("destination_path")
 
+            print("source_path" , source_path)
+            print("destination_path" , destination_path)
+
 
             result = drive_client.copy_file(source_path, destination_path)
-            print("copy result" , result)
+
+
+            # print("copy result" , result)
+
             return _format_copy_response(result)
         
-        elif command == "SUMMARY":
+        elif command == "FOLDERSUMMARY":
+            print('folder summary')
+
             folder_path = parsed_command.get("folder_path")
+
             result = summarizer.summarize_folder(folder_path)
+
+            formatted_summary = summarizer.format_summary_response(result)
+
+            # print("formatted_summary" , formatted_summary)
             
-            print("summary result" , result)
-            return summarizer.format_summary_response(result)
+            return formatted_summary
+
+            
+        
+        elif command == "FILESUMMARY":
+            print('file summary')
+
+            file_path = parsed_command.get("file_path")
+
+            result = summarizer.summarize_single_document(file_path)
+
+            formatted_summary = summarizer.format_summary_response(result)
+
+            # print("formatted_summary" , formatted_summary)
+
+            return formatted_summary
         
         
         elif command == "HELP":
             text = parsed_command.get("help_text")
+            # print("help text" , text)
             return text
         
         else:
@@ -232,32 +217,14 @@ def _format_copy_response(result: dict) -> str:
 
 
 def _create_twilio_response(message: str) -> str:
-    """Create Twilio TwiML response"""
     resp = MessagingResponse()
     resp.message(message)
     return str(resp)
 
 
 
-@app.route('/health', methods=['GET'])
-def health_check():
-    """Health check endpoint"""
-    return jsonify({
-        "status": "healthy",
-        "service": "WhatsApp Drive Assistant API"
-    })
 
-@app.route('/test', methods=['GET'])
-def test_endpoint():
-    """Test endpoint for debugging"""
-    return jsonify({
-        "message": "WhatsApp Drive Assistant API is running",
-        "endpoints": {
-            "webhook": "/webhook",
-            "api_execute": "/api/execute",
-            "health": "/health"
-        }
-    })
+
 
 @app.route('/', methods=['GET'])
 def get_root():

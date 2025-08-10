@@ -12,7 +12,9 @@ class CommandType(Enum):
     LIST = "LIST"
     DELETE = "DELETE"
     MOVE = "MOVE"
-    SUMMARY = "SUMMARY"
+    COPY = "COPY"
+    FOLDERSUMMARY = "FOLDERSUMMARY"
+    FILESUMMARY = "FILESUMMARY"
     HELP = "HELP"
     UNKNOWN = "UNKNOWN"
 
@@ -25,23 +27,24 @@ class CommandParser:
             "LIST": CommandType.LIST,
             "DELETE": CommandType.DELETE,
             "MOVE": CommandType.MOVE,
-            "SUMMARY": CommandType.SUMMARY,
+            "COPY": CommandType.COPY,
+            "FOLDERSUMMARY": CommandType.FOLDERSUMMARY,
+            "FILESUMMARY": CommandType.FILESUMMARY,
             "HELP": CommandType.HELP,
             "H": CommandType.HELP
         }
+
     
     def parse_message(self, message: str) -> Dict:
-        """Parse WhatsApp message and extract command information"""
         try:
-            # Clean and normalize the message
             message = message.strip().upper()
             
             if not message:
                 return self._create_error_response("Empty message received")
             
-            # Check for help command
             if message in ["HELP", "H", "?"]:
                 return self._create_help_response()
+
             
             # Parse command and parameters
             parts = message.split()
@@ -49,20 +52,36 @@ class CommandParser:
                 return self._create_error_response("No command found")
             
             command = parts[0]
+
+
             if command not in self.supported_commands:
                 return self._create_error_response(f"Unknown command: {command}")
             
+          
+
             command_type = self.supported_commands[command]
+
             
             # Parse based on command type
-            if command_type == CommandType.LIST:
+            if command_type == CommandType.LIST :
                 return self._parse_list_command(parts)
+
+
             elif command_type == CommandType.DELETE:
                 return self._parse_delete_command(parts)
+
             elif command_type == CommandType.MOVE:
                 return self._parse_move_command(parts)
-            elif command_type == CommandType.SUMMARY:
-                return self._parse_summary_command(parts)
+
+
+            elif command_type == CommandType.COPY:
+                return self._parse_copy_command(parts)
+
+            elif command_type == CommandType.FOLDERSUMMARY or command_type == CommandType.FILESUMMARY:
+                return self._parse_summary_command(parts , command_type.value)
+
+       
+
             else:
                 return self._create_error_response(f"Unsupported command: {command}")
                 
@@ -71,24 +90,21 @@ class CommandParser:
             return self._create_error_response(f"Error parsing command: {str(e)}")
     
     def _parse_list_command(self, parts: list) -> Dict:
-        """Parse LIST command"""
-        # print("parts" , parts)
-
+     
         if len(parts) < 2:
             return self._create_error_response("LIST command requires a folder path")
         
         folder_path = parts[1]
 
-        # if not self._is_valid_path(folder_path):
-        #     return self._create_error_response("Invalid folder path format")
         
-        # print("folder_path" , folder_path)
         return {
             "command": "LIST",
             "folder_path": folder_path,
             "success": True
         }
     
+
+
     def _parse_delete_command(self, parts: list) -> Dict:
         """Parse DELETE command"""
         if len(parts) < 2:
@@ -144,7 +160,7 @@ class CommandParser:
             "success": True
         }
     
-    def _parse_summary_command(self, parts: list) -> Dict:
+    def _parse_summary_command(self, parts: list , command_type: str) -> Dict:
         """Parse SUMMARY command"""
         if len(parts) < 2:
             return self._create_error_response("SUMMARY command requires a folder path")
@@ -153,11 +169,13 @@ class CommandParser:
         if not self._is_valid_path(folder_path):
             return self._create_error_response("Invalid folder path format")
         
+        
         return {
-            "command": "SUMMARY",
+            "command": command_type,
             "folder_path": folder_path,
-            "success": True
-        }
+            "success": True ,
+            "file_path": folder_path,
+        }   
     
     def _is_valid_path(self, path: str) -> bool:
         """Validate path format"""
@@ -193,23 +211,24 @@ class CommandParser:
 *Available Commands:*
 
 📁 *LIST /FolderName*
-   List all files in a folder
-   Example: `LIST /ProjectX`
+   - List all files in a folder
 
 🗑️ *DELETE /FolderName/file.pdf*
    Delete a specific file
-   Example: `DELETE /ProjectX/report.pdf`
 
 📦 *MOVE /Source/file.pdf /Destination*
    Move file to different folder
-   Example: `MOVE /ProjectX/report.pdf /Archive`
 
-📋 *SUMMARY /FolderName*
-   Generate AI summaries of all documents
-   Example: `SUMMARY /ProjectX`
+📦 *COPY /Source/file.pdf /Destination*
+   Copy file to different folder
+
+📋 *FolderSummary /FolderName*
+   Generate AI summaries of all documents in the folder
+
+📋 *FileSummary /FolderName/file.pdf*
+   Generate AI summaries of the specific file in the folder
 
 ❓ *HELP* or *H*
-   Show this help message
 
 *Notes:*
 • Use forward slashes (/) for paths
@@ -247,8 +266,17 @@ class CommandParser:
             dest = result.get("destination_path", "")
             return f"📦 Moving file from {source} to {dest}"
         
-        elif command == "SUMMARY":
+        elif command == "COPY":
+            source = result.get("source_path", "")
+            dest = result.get("destination_path", "")
+            return f"📦 Copying file from {source} to {dest}"
+        
+        elif command == "FOLDERSUMMARY":
             folder = result.get("folder_path", "")
             return f"📋 Generating summaries for: {folder}"
+        
+        elif command == "FILESUMMARY":
+            file_path = result.get("file_path", "")
+            return f"📋 Generating summaries for: {file_path}"
         
         return "✅ Command parsed successfully"

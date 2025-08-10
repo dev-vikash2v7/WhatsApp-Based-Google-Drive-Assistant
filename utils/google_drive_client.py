@@ -142,6 +142,7 @@ class GoogleDriveClient:
             
     
             destination_folder_id = self._get_folder_id(destination_path)
+
             if not destination_folder_id:
                 return {"error": f"Destination folder '{destination_path}' not found"}
             
@@ -173,16 +174,24 @@ class GoogleDriveClient:
                 return {"error": f"Source file '{source_path}' not found"}
             
             destination_folder_id = self._get_folder_id(destination_path)
+
             if not destination_folder_id:
                 return {"error": f"Destination folder '{destination_path}' not found"}
             
-            file = self.service.files().copy(
-                fileId=file_id,
-                addParents=destination_folder_id,
-                fields='id, parents'
+            # Get the source file metadata (to preserve name, etc.)
+            source_file = self.service.files().get(fileId=file_id, fields='name, mimeType').execute()
+
+            # Create the copy in the destination folder
+            copied_file = self.service.files().copy(
+            fileId=file_id,
+            body={
+                'name': source_file['name'],  # Keep original name
+                'parents': [destination_folder_id]
+            }
             ).execute()
 
-            return {"message": f"File copied from '{source_path}' to '{destination_path}' successfully"}
+            return {"message": f"File '{source_path}' copied to '{destination_path}' successfully", "file_id": copied_file.get('id')}
+
 
         except HttpError as error:
             logger.error(f"Error copying file: {error}")
@@ -194,6 +203,7 @@ class GoogleDriveClient:
         """Extract text content from various document types"""
         try:
             file_id = self._get_file_id(file_path)
+
             if not file_id:
                 return {"error": f"File '{file_path}' not found"}
             
@@ -327,12 +337,12 @@ class GoogleDriveClient:
     def _get_file_id(self, file_path: str) -> Optional[str]:
         """Get file ID by path"""
         try:
-            print("_get_file_id file_path " , file_path)
+            # print("_get_file_id file_path " , file_path)
             # Split path into components
 
 
             path_parts = file_path.strip('/').split('/')
-            print(path_parts)
+            # print(path_parts)
 
             if len(path_parts) < 2:
                 return None
@@ -343,7 +353,7 @@ class GoogleDriveClient:
             # Get folder ID
             folder_id = self._get_folder_id(f"/{folder_name}")
 
-            print(folder_id)
+            # print(folder_id)
 
             if not folder_id:
                 return None
@@ -354,10 +364,10 @@ class GoogleDriveClient:
                 fields="files(id, name)"
             ).execute()
 
-            print('results' , results)
+            # print('results' , results)
             
             files = results.get('files', [])
-            print("getfileid files" , files)
+            # print("getfileid files" , files)
 
 
             if files:

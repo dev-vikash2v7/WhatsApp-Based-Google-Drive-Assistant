@@ -16,20 +16,7 @@ A comprehensive n8n workflow that enables WhatsApp users to interact with Google
 - `MOVE /ProjectX/report.pdf /Archive` - Move file to different folder
 - `SUMMARY /ProjectX` - Generate AI summaries of all documents in folder
 
-## Project Structure
 
-```
-whatsapp-ai/
-├── n8n-workflows/
-│   └── whatsapp-drive-assistant.json
-├── python/
-│   ├── google_drive_client.py
-│   ├── document_summarizer.py
-│   └── command_parser.py
-├── config/
-│   └── settings.json
-└── README.md
-```
 
 ## Setup Instructions
 
@@ -57,7 +44,7 @@ whatsapp-ai/
 GOOGLE_DRIVE_CREDENTIALS_FILE=path/to/credentials.json
 TWILIO_ACCOUNT_SID=your_twilio_sid
 TWILIO_AUTH_TOKEN=your_twilio_token
-OPENAI_API_KEY=your_openai_key
+GEMINI_API_KEY=your_openai_key
 ```
 
 ## Usage

@@ -1,0 +1,134 @@
+{
+  "name": "python whatsapp workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "whatsapp-incoming",
+        "options": {}
+      },
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -848,
+        160
+      ],
+      "id": "374601bf-6117-47a8-b7d3-b827936db586",
+      "webhookId": "a6e265af-5181-45e9-9fd2-63c11c638537"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://e32f114262b4.ngrok-free.app/api/execute",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "message",
+              "value": "={{ $json.Body }}"
+            },
+            {
+              "name": "=To",
+              "value": "={{ $json.WaId }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -400,
+        192
+      ],
+      "id": "0217075e-728d-45c3-9804-8882d0d18a9e",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "from": "=14155238886",
+        "to": "={{ $('Parse Command').item.json.WaId }}",
+        "toWhatsapp": true,
+        "message": "={{ $json.response }}",
+        "options": {
+          "statusCallback": ""
+        }
+      },
+      "name": "Send WhatsApp Summary1",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [
+        -176,
+        192
+      ],
+      "id": "8cc78688-fc9c-43e0-9ca7-8509898277f9",
+      "credentials": {
+        "twilioApi": {
+          "id": "CNI0gmdocnw9VBUL",
+          "name": "Twilio account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "functionCode": "\nreturn $json.body;"
+      },
+      "name": "Parse Command",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        -592,
+        192
+      ],
+      "id": "fbeca856-c01e-4b22-a415-e87a8e5d5027",
+      "alwaysOutputData": true
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Parse Command",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Command": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Send WhatsApp Summary1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "ff0136d4-09aa-4c48-9fb7-cd0fcd891c1d",
+  "meta": {
+    "instanceId": "e21f1c25ae64b747207c5dc2948af3efe3be89513486d8429329e06f953795f1"
+  },
+  "id": "tPYZc5iL0pdOCzOc",
+  "tags": []
+}
